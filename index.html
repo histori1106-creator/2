@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>Лабораторна робота – Осцилограф</title>
+
+<style>
+
+body{
+background:linear-gradient(120deg,#141e30,#243b55);
+font-family:Arial;
+text-align:center;
+color:white;
+}
+
+h1{
+color:#ffd700;
+}
+
+canvas{
+background:#000;
+border:4px solid #00ffcc;
+margin-top:20px;
+}
+
+.controls{
+margin-top:15px;
+}
+
+input,select{
+padding:6px;
+margin:5px;
+border-radius:6px;
+border:none;
+}
+
+button{
+padding:10px 16px;
+margin:5px;
+border:none;
+border-radius:8px;
+font-size:16px;
+cursor:pointer;
+}
+
+#toggle{
+background:#00ff88;
+}
+
+#reset{
+background:#ffcc00;
+}
+
+#save{
+background:#00ccff;
+}
+
+.delete{
+background:#ff4444;
+color:white;
+}
+
+table{
+margin:auto;
+margin-top:20px;
+border-collapse:collapse;
+width:90%;
+background:white;
+color:black;
+}
+
+th,td{
+border:1px solid black;
+padding:8px;
+}
+
+th{
+background:#ffd700;
+}
+
+.info{
+margin-top:20px;
+font-size:18px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Лабораторна робота: Дослідження сигналу осцилографом</h1>
+
+<canvas id="osc" width="800" height="300"></canvas>
+
+<div class="controls">
+
+<label>Форма сигналу:</label>
+<select id="wave">
+<option value="sin">Синус</option>
+<option value="square">Квадрат</option>
+<option value="triangle">Трикутник</option>
+</select>
+
+<label>Амплітуда:</label>
+<input id="amp" type="number" value="50">
+
+<label>Частота (Гц):</label>
+<input id="freq" type="number" value="2">
+
+<label>Шум:</label>
+<input id="noise" type="number" value="0">
+
+<br>
+
+<button id="toggle" onclick="toggle()">Старт</button>
+<button id="reset" onclick="reset()">Скинути</button>
+<button id="save" onclick="save()">Записати результат</button>
+
+</div>
+
+<div class="info">
+<p id="result1"></p>
+<p id="result2"></p>
+<p id="result3"></p>
+<p id="result4"></p>
+</div>
+
+<table id="results">
+
+<tr>
+<th>№</th>
+<th>Форма</th>
+<th>Амплітуда</th>
+<th>Частота (Гц)</th>
+<th>Період (с)</th>
+<th>Шум</th>
+<th>Дія</th>
+</tr>
+
+</table>
+
+<script>
+
+let canvas=document.getElementById("osc");
+let ctx=canvas.getContext("2d");
+
+let running=false;
+let t=0;
+
+function toggle(){
+
+running=!running;
+
+let btn=document.getElementById("toggle");
+
+if(running){
+btn.textContent="Стоп";
+btn.style.background="#ff4444";
+}else{
+btn.textContent="Старт";
+btn.style.background="#00ff88";
+}
+
+}
+
+function reset(){
+
+running=false;
+t=0;
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+let btn=document.getElementById("toggle");
+btn.textContent="Старт";
+btn.style.background="#00ff88";
+
+}
+
+function getWave(x,type,amp,freq){
+
+if(type==="sin"){
+return amp*Math.sin((x+t)*freq*0.02);
+}
+
+if(type==="square"){
+return amp*Math.sign(Math.sin((x+t)*freq*0.02));
+}
+
+if(type==="triangle"){
+return amp*(2/Math.PI)*Math.asin(Math.sin((x+t)*freq*0.02));
+}
+
+return 0;
+
+}
+
+function draw(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+// ---------- Дрібна сітка ----------
+ctx.strokeStyle="#0b2f2f";
+ctx.lineWidth=0.5;
+
+for(let x=0;x<=canvas.width;x+=10){
+    ctx.beginPath();
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,canvas.height);
+    ctx.stroke();
+}
+
+for(let y=0;y<=canvas.height;y+=10){
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(canvas.width,y);
+    ctx.stroke();
+}
+
+// ---------- Основна сітка ----------
+ctx.strokeStyle="#1f5f5f";
+ctx.lineWidth=1;
+
+for(let x=0;x<=canvas.width;x+=40){
+    ctx.beginPath();
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,canvas.height);
+    ctx.stroke();
+}
+
+for(let y=0;y<=canvas.height;y+=40){
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(canvas.width,y);
+    ctx.stroke();
+}
+
+// ---------- Осі ----------
+ctx.strokeStyle="white";
+ctx.lineWidth=2;
+
+// X
+ctx.beginPath();
+ctx.moveTo(0,150);
+ctx.lineTo(canvas.width,150);
+ctx.stroke();
+
+// Y
+ctx.beginPath();
+ctx.moveTo(40,0);
+ctx.lineTo(40,canvas.height);
+ctx.stroke();
+
+// ---------- Поділки ----------
+ctx.lineWidth=1;
+
+for(let x=40;x<=canvas.width;x+=40){
+    ctx.beginPath();
+    ctx.moveTo(x,145);
+    ctx.lineTo(x,155);
+    ctx.stroke();
+}
+
+for(let y=0;y<=canvas.height;y+=40){
+    ctx.beginPath();
+    ctx.moveTo(35,y);
+    ctx.lineTo(45,y);
+    ctx.stroke();
+}
+
+// ---------- Підписи ----------
+ctx.fillStyle="white";
+ctx.font="14px Arial";
+
+ctx.fillStyle="white";
+ctx.font="14px Arial";
+
+ctx.fillText("Напруга (В)",48,18);
+ctx.fillText("Час (с)",canvas.width-45,170);
+
+let amp=Number(document.getElementById("amp").value);
+let freq=Number(document.getElementById("freq").value);
+let noise=Number(document.getElementById("noise").value);
+let wave=document.getElementById("wave").value;
+
+let period=0;
+
+if(freq>0){
+period=(1/freq).toFixed(3);
+}
+
+ctx.beginPath();
+ctx.strokeStyle="lime";
+ctx.lineWidth=2;
+
+for(let x=0;x<canvas.width;x++){
+
+let y=150 + getWave(x,wave,amp,freq);
+
+y += (Math.random()*noise);
+
+ctx.lineTo(x,y);
+
+}
+
+ctx.stroke();
+
+document.getElementById("result1").textContent="Форма сигналу: "+wave;
+document.getElementById("result2").textContent="Амплітуда: "+amp+" В";
+document.getElementById("result3").textContent="Частота: "+freq+" Гц";
+document.getElementById("result4").textContent="Період: "+period+" с";
+
+t+=2;
+
+requestAnimationFrame(loop);
+
+}
+
+function loop(){
+
+if(running){
+draw();
+}else{
+requestAnimationFrame(loop);
+}
+
+}
+
+loop();
+
+function save(){
+
+let table=document.getElementById("results");
+
+let row=table.insertRow();
+
+let i=table.rows.length-1;
+
+let wave=document.getElementById("wave").value;
+let amp=document.getElementById("amp").value;
+let freq=document.getElementById("freq").value;
+let noise=document.getElementById("noise").value;
+
+let period=0;
+
+if(freq>0){
+period=(1/freq).toFixed(3);
+}
+
+row.innerHTML=
+"<td>"+i+"</td>"+
+"<td>"+wave+"</td>"+
+"<td>"+amp+"</td>"+
+"<td>"+freq+"</td>"+
+"<td>"+period+"</td>"+
+"<td>"+noise+"</td>"+
+"<td><button class='delete' onclick='del(this)'>видалити</button></td>";
+
+}
+
+function del(btn){
+btn.parentNode.parentNode.remove();
+}
+
+</script>
+
+</body>
+</html>
